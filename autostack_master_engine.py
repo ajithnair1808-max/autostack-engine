@@ -40,27 +40,40 @@ def fetch_gumroad_sales():
         print(f"Gumroad API Error: {e}")
     return []
 
-def create_gumroad_product(name, description, price_in_cents):
-    if not GUMROAD_TOKEN:
-        print("No Gumroad token found. Skipping product creation.")
-        return None
-    url = f"{GUMROAD_API_BASE}/products"
-    headers = {"Authorization": f"Bearer {GUMROAD_TOKEN}"}
-    payload = {
-        "name": name,
-        "description": description,
-        "price": price_in_cents,
-        "url": name.lower().replace(" ", "-")
-    }
+def create_ai_digital_product():
+    if not GUMROAD_TOKEN or not GEMINI_KEY:
+        print("Missing API keys for product creation.")
+        return
+    
+    # Prompt Gemini to invent a profitable digital product
+    idea_prompt = "Invent a trending digital product idea (e.g., Notion template, AI prompt bundle, developer boilerplate). Return ONLY a JSON object with keys: 'name', 'description', and 'price_in_cents' (integer between 900 and 2900)."
+    ai_response = call_gemini(idea_prompt)
+    
     try:
+        # Clean response and parse JSON
+        cleaned_json = ai_response.replace("```json", "").replace("```", "").strip()
+        product_data = json.loads(cleaned_json)
+        
+        name = product_data.get("name", "AI Productivity Kit")
+        description = product_data.get("description", "High-value digital asset for professionals.")
+        price = int(product_data.get("price_in_cents", 1900))
+        
+        url = f"{GUMROAD_API_BASE}/products"
+        headers = {"Authorization": f"Bearer {GUMROAD_TOKEN}"}
+        payload = {
+            "name": name,
+            "description": description,
+            "price": price,
+            "url": name.lower().replace(" ", "-").replace(":", "")
+        }
+        
         response = requests.post(url, headers=headers, data=payload)
-        if response.status_code == 200:
-            return response.json().get("product")
+        if response.status_code == 201 or response.status_code == 200:
+            print(f"Successfully created new product: {name}")
         else:
-            print(f"Failed to create product: {response.text}")
+            print(f"Failed to create product on Gumroad: {response.text}")
     except Exception as e:
-        print(f"Product Creation Error: {e}")
-    return None
+        print(f"Product Generation Parse Error: {e}")
 
 def update_financial_ledger(sales):
     total_revenue = sum([float(sale.get("price", 0)) / 100 for sale in sales])
@@ -103,6 +116,7 @@ def generate_marketing_content():
 
 if __name__ == "__main__":
     print("Initializing Autostack Master Engine...")
+    create_ai_digital_product()
     sales_data = fetch_gumroad_sales()
     update_financial_ledger(sales_data)
     generate_marketing_content()
