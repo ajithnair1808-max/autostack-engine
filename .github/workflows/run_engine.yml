@@ -30,6 +30,7 @@ jobs:
         run: |
           git config --global user.name "Autostack Autonomous CEO"
           git config --global user.email "ceo@autostackdigital.gumroad.com"
+          git pull origin main --rebase || echo "No remote changes to pull"
           git add DAILY_MARKETING_PROMOS.md FINANCIAL_LEDGER.md
           git commit -m "Auto-update: Daily marketing copy and financial ledger" || echo "No changes to commit"
-          git push
+          git push origin main
