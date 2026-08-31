@@ -1,0 +1,35 @@
+name: Autostack 24/7 Cloud Engine
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  run-autostack:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Set Up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install Dependencies
+        run: pip install requests
+        
+      - name: Execute Autonomous Master Engine
+        env:
+          GUMROAD_ACCESS_TOKEN: ${{ secrets.GUMROAD_ACCESS_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python autostack_master_engine.py
+        
+      - name: Commit Generated Reports & Content
+        run: |
+          git config --global user.name "Autostack Autonomous CEO"
+          git config --global user.email "ceo@autostackdigital.gumroad.com"
+          git add DAILY_MARKETING_PROMOS.md FINANCIAL_LEDGER.md
+          git commit -m "Auto-update: Daily marketing copy and financial ledger" || echo "No changes to commit"
+          git push
